@@ -202,3 +202,20 @@ class Pedidos:
             "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         }
         return {"output": output, "headers": headers}
+
+    # Función para consultar el tercero de un pedido
+    def consultar_tercero_pedido(self, data: dict):
+        """ Api que realiza la consulta del tercero del pedido. """
+
+        # Asignamos nuestros datos de entrada a sus respectivas variables
+        numero_pedido = data["numero_pedido"]
+
+        try:
+            # Consultamos el tercero en la base de datos
+            nombre = self.querys.consultar_tercero_pedido(numero_pedido)
+            
+            # Retornamos la información.
+            return self.tools.output(200, "Datos encontrados.", nombre)
+
+        except CustomException as e:
+            raise CustomException(f"{e}")

@@ -67,3 +67,10 @@ def exportar_remision_factura_excel(request: Request, db: Session = Depends(get_
     data = getattr(request.state, "json_data", {})
     response = Pedidos(db).exportar_remision_factura_excel(data)
     return response
+
+@pedidos_router.post('/consultar_tercero_pedido', tags=["Pedidos"], response_model=dict)
+@http_decorator
+def consultar_tercero_pedido(request: Request, db: Session = Depends(get_db)):
+    data = getattr(request.state, "json_data", {})
+    response = Pedidos(db).consultar_tercero_pedido(data)
+    return response

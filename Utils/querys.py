@@ -282,3 +282,23 @@ class Querys:
             raise CustomException(f"{e}")
         finally:
             self.db.close()
+
+    def consultar_tercero_pedido(self, numero_pedido: int):
+        try:
+            sql = """
+                SELECT t.nombres, t.nit
+                FROM documentos_ped dp
+                INNER JOIN terceros t ON t.nit = dp.nit
+                WHERE dp.numero = :numero_pedido AND dp.sw = 1;
+            """
+            result = self.db.execute(text(sql), {"numero_pedido": numero_pedido}).fetchone()
+            
+            row = dict(result._mapping) if result else ''
+                        
+            return row
+
+        except CustomException as ex:
+            print(str(ex))
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
