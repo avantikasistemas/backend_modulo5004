@@ -1,5 +1,8 @@
 from Utils.tools import Tools, CustomException
 from Utils.querys import Querys
+from fastapi import Response
+import pandas as pd
+from io import BytesIO
 
 class Pedidos:
 
@@ -123,9 +126,17 @@ class Pedidos:
         try:
             # Consultamos el pedido en la base de datos
             pedido = self.querys.consultar_remision_factura(numero_pedido)
+            
+            # Consultamos valores extras
+            valores_extras  = self.querys.consultar_valores_extras(numero_pedido)
+            
+            result = {
+                "pedido": pedido,
+                "valores_extras": valores_extras
+            }
 
             # Retornamos la información.
-            return self.tools.output(200, "Datos encontrados.", pedido)
+            return self.tools.output(200, "Datos encontrados.", result)
 
         except CustomException as e:
             raise CustomException(f"{e}")
@@ -152,3 +163,42 @@ class Pedidos:
 
         except CustomException as e:
             raise CustomException(f"{e}")
+
+    # Función para exportar remisión y factura a excel
+    def exportar_remision_factura_excel(self, data: dict):
+        """ Api que realiza la exportación de remision y factura a excel. """
+
+        # Asignamos nuestros datos de entrada a sus respectivas variables
+        registros = data["registros"]
+
+        try:
+            
+            datos_excel = self.exportar_excel(registros)
+
+            return Response(
+                content=datos_excel["output"].read(), 
+                headers=datos_excel["headers"], 
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+
+        except CustomException as e:
+            raise CustomException(f"{e}")
+        
+    # Función que realiza la operacion de exporte con libreria de excel
+    def exportar_excel(self, datos: list):
+
+        # Convertir los datos a un DataFrame de pandas
+        df = pd.DataFrame(datos)
+
+        # Crear un buffer de memoria para el archivo Excel
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name="Datos")
+
+        # Obtener los bytes del archivo y preparar la respuesta
+        output.seek(0)
+        headers = {
+            "Content-Disposition": "attachment; filename=datos.xlsx",
+            "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        }
+        return {"output": output, "headers": headers}

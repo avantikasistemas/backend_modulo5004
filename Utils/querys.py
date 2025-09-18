@@ -252,3 +252,33 @@ class Querys:
             raise CustomException(str(ex))
         finally:
             self.db.close()
+
+    # Query para consultar valores extras asociados a un pedido
+    def consultar_valores_extras(self, numero_pedido: int):
+        try:
+            sql = """
+                SELECT * 
+                FROM documentos_ped 
+                WHERE numero = :numero_pedido AND sw = 1;
+            """
+            result = self.db.execute(text(sql), {
+                "numero_pedido": numero_pedido
+            }).fetchone()
+            
+            response = dict(result._mapping) if result else None
+
+            for k, v in response.items():
+                if isinstance(v, date):
+                    response[k] = v.strftime('%Y-%m-%d')
+                if isinstance(v, (int, float, Decimal)) and not isinstance(v, bool):
+                    # Opción A: formatear solo si es un campo monetario
+                    if k.lower() in CAMPOS_MONETARIOS:
+                        response[k] = self.tools.formato_peso(v, symbol="$", decimals=0)
+                        
+            return response
+
+        except Exception as e:
+            print(f"Error al consultar valores extras: {e}")
+            raise CustomException(f"{e}")
+        finally:
+            self.db.close()
